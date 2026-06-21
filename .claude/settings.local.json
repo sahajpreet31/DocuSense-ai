@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(\\(Invoke-WebRequest -Uri http://127.0.0.1:5001/health -UseBasicParsing\\).Content)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\HP\\\\OneDrive\\\\Desktop\\\\DocuSense-ai\\\\ml-service\" -Force | Where-Object { $_.Name -ne 'venv' } | Select-Object Name)",
+      "PowerShell(Start-Sleep -Seconds 3; \\(Invoke-WebRequest -Uri http://127.0.0.1:5001/health -UseBasicParsing\\).Content)",
+      "PowerShell(cd \"c:\\\\Users\\\\HP\\\\OneDrive\\\\Desktop\\\\DocuSense-ai\\\\ml-service\"; $resp = Invoke-WebRequest -Uri http://127.0.0.1:5001/upload -Method Post -Form @{ file = Get-Item .\\\\test_contract.pdf }; $resp.Content)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "PowerShell(Get-Command chromium-cli -ErrorAction SilentlyContinue)",
+      "PowerShell(chromium-cli --help 2>&1)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 13588 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(try { \\(Invoke-WebRequest -Uri http://127.0.0.1:5001/health -UseBasicParsing -TimeoutSec 3\\).Content } catch { \"NOT RUNNING\" })",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 10692 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5001 -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 12468 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(npx playwright --version 2>&1)",
+      "PowerShell(Start-Sleep -Seconds 2; try { \\(Invoke-WebRequest -Uri http://127.0.0.1:5001/health -UseBasicParsing -TimeoutSec 3\\).Content } catch { \"DOWN: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(Start-Sleep -Seconds 2; try { \\(Invoke-WebRequest -Uri http://127.0.0.1:5001/health -UseBasicParsing -TimeoutSec 3\\).Content } catch { \"DOWN\" })",
+      "PowerShell(Stop-Process -Id 8872 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process python -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"Name='python.exe'\")",
+      "PowerShell(Stop-Process -Id 17532,18988,3016,5764 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(try { \\(Invoke-WebRequest -Uri http://localhost:5173 -UseBasicParsing -TimeoutSec 2\\).StatusCode } catch { \"DOWN\" })",
+      "PowerShell(Get-NetTCPConnection -LocalPort 4173 -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 10372,17796,18372,9236 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 20476 -Force -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

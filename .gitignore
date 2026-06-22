@@ -40,3 +40,6 @@ logs/
 Thumbs.db
 .vscode/
 .idea/
+
+ml-service/chroma_db/
+ml-service/uploads/

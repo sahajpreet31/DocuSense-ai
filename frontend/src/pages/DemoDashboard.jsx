@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-const ML_SERVICE_URL = "http://localhost:5001";
+const ML_SERVICE_URL = "https://sahajpreek19-docusense-ml.hf.space";
 
 const CATEGORY_STYLES = {
   contract: "bg-indigo-100 text-indigo-700",

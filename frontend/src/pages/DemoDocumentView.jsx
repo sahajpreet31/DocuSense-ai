@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import AnalyticsPanel from "../components/AnalyticsPanel";
 import { exportSummaryAsPdf } from "../utils/exportSummaryPdf";
 
-const ML_SERVICE_URL = "http://localhost:5001";
+const ML_SERVICE_URL = "https://sahajpreek19-docusense-ml.hf.space";
 const TABS = ["Chat", "Summary", "Entities", "Classification", "Risk Flags", "Analytics"];
 
 const CATEGORY_STYLES = {

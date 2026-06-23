@@ -159,6 +159,9 @@ export default function LandingPage() {
             <a href="#how-it-works" className="hover:text-indigo-600 transition">
               How It Works
             </a>
+            <Link to="/data-privacy" className="hover:text-indigo-600 transition">
+              Data Privacy
+            </Link>
           </div>
 
           <div className="flex items-center gap-3">

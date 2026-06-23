@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import AnalyticsPanel from "../components/AnalyticsPanel";
 import { exportSummaryAsPdf } from "../utils/exportSummaryPdf";
+import { getCachedTabData } from "../utils/tabCache";
 
 const ML_SERVICE_URL = "https://sahajpreek19-docusense-ml.hf.space";
 const TABS = ["Chat", "Summary", "Entities", "Classification", "Risk Flags", "Analytics"];
@@ -181,7 +182,7 @@ function ChatTab({ documentId, messages, setMessages }) {
   );
 }
 
-function SummaryTab({ documentId, documentName }) {
+function SummaryTab({ documentId, documentName, cache }) {
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -189,9 +190,11 @@ function SummaryTab({ documentId, documentName }) {
   useEffect(() => {
     let isMounted = true;
 
-    callMlService("/summarize", { document_id: documentId })
-      .then((data) => {
-        if (isMounted) setSummary(data.summary);
+    getCachedTabData(cache, documentId, "summary", () =>
+      callMlService("/summarize", { document_id: documentId }).then((data) => data.summary)
+    )
+      .then((result) => {
+        if (isMounted) setSummary(result);
       })
       .catch((err) => {
         if (isMounted) setError(err.message || "Failed to load summary");
@@ -203,7 +206,7 @@ function SummaryTab({ documentId, documentName }) {
     return () => {
       isMounted = false;
     };
-  }, [documentId]);
+  }, [documentId, cache]);
 
   if (loading) return <p className="text-sm text-gray-500">Generating summary...</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
@@ -223,7 +226,7 @@ function SummaryTab({ documentId, documentName }) {
   );
 }
 
-function EntitiesTab({ documentId }) {
+function EntitiesTab({ documentId, cache }) {
   const [entities, setEntities] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -231,9 +234,11 @@ function EntitiesTab({ documentId }) {
   useEffect(() => {
     let isMounted = true;
 
-    callMlService("/entities", { document_id: documentId })
-      .then((data) => {
-        if (isMounted) setEntities(data.entities);
+    getCachedTabData(cache, documentId, "entities", () =>
+      callMlService("/entities", { document_id: documentId }).then((data) => data.entities)
+    )
+      .then((result) => {
+        if (isMounted) setEntities(result);
       })
       .catch((err) => {
         if (isMounted) setError(err.message || "Failed to load entities");
@@ -245,7 +250,7 @@ function EntitiesTab({ documentId }) {
     return () => {
       isMounted = false;
     };
-  }, [documentId]);
+  }, [documentId, cache]);
 
   if (loading) return <p className="text-sm text-gray-500">Extracting entities...</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
@@ -279,7 +284,7 @@ function EntitiesTab({ documentId }) {
   );
 }
 
-function ClassificationTab({ documentId }) {
+function ClassificationTab({ documentId, cache }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -287,7 +292,9 @@ function ClassificationTab({ documentId }) {
   useEffect(() => {
     let isMounted = true;
 
-    callMlService("/classify", { document_id: documentId })
+    getCachedTabData(cache, documentId, "classification", () =>
+      callMlService("/classify", { document_id: documentId })
+    )
       .then((data) => {
         if (isMounted) setResult(data);
       })
@@ -301,7 +308,7 @@ function ClassificationTab({ documentId }) {
     return () => {
       isMounted = false;
     };
-  }, [documentId]);
+  }, [documentId, cache]);
 
   if (loading) return <p className="text-sm text-gray-500">Classifying document...</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
@@ -334,7 +341,7 @@ function ClassificationTab({ documentId }) {
   );
 }
 
-function RiskFlagsTab({ documentId }) {
+function RiskFlagsTab({ documentId, cache }) {
   const [risks, setRisks] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -342,9 +349,11 @@ function RiskFlagsTab({ documentId }) {
   useEffect(() => {
     let isMounted = true;
 
-    callMlService("/risk-flags", { document_id: documentId })
-      .then((data) => {
-        if (isMounted) setRisks(data.risks || []);
+    getCachedTabData(cache, documentId, "risk-flags", () =>
+      callMlService("/risk-flags", { document_id: documentId }).then((data) => data.risks || [])
+    )
+      .then((result) => {
+        if (isMounted) setRisks(result);
       })
       .catch((err) => {
         if (isMounted) setError(err.message || "Failed to load risk flags");
@@ -356,7 +365,7 @@ function RiskFlagsTab({ documentId }) {
     return () => {
       isMounted = false;
     };
-  }, [documentId]);
+  }, [documentId, cache]);
 
   if (loading) return <p className="text-sm text-gray-500">Scanning for risks...</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
@@ -391,6 +400,7 @@ export default function DemoDocumentView() {
   const [activeTab, setActiveTab] = useState("Chat");
   const [chatMessages, setChatMessages] = useState([]);
   const documentName = localStorage.getItem("demo_document_name") || "Demo Document";
+  const cache = useRef({});
 
   return (
     <div className="min-h-screen bg-surface">
@@ -462,16 +472,20 @@ export default function DemoDocumentView() {
               <ChatTab documentId={documentId} messages={chatMessages} setMessages={setChatMessages} />
             )}
             {activeTab === "Summary" && (
-              <SummaryTab documentId={documentId} documentName={documentName} />
+              <SummaryTab documentId={documentId} documentName={documentName} cache={cache} />
             )}
-            {activeTab === "Entities" && <EntitiesTab documentId={documentId} />}
-            {activeTab === "Classification" && <ClassificationTab documentId={documentId} />}
-            {activeTab === "Risk Flags" && <RiskFlagsTab documentId={documentId} />}
+            {activeTab === "Entities" && <EntitiesTab documentId={documentId} cache={cache} />}
+            {activeTab === "Classification" && (
+              <ClassificationTab documentId={documentId} cache={cache} />
+            )}
+            {activeTab === "Risk Flags" && <RiskFlagsTab documentId={documentId} cache={cache} />}
             {activeTab === "Analytics" && (
               <AnalyticsPanel
                 fetchAnalytics={() =>
-                  callMlService("/analytics", { document_id: documentId }).then(
-                    (data) => data.analytics
+                  getCachedTabData(cache, documentId, "analytics", () =>
+                    callMlService("/analytics", { document_id: documentId }).then(
+                      (data) => data.analytics
+                    )
                   )
                 }
               />

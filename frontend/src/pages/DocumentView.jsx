@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import api from "../services/api";
 import AnalyticsPanel from "../components/AnalyticsPanel";
 import { exportSummaryAsPdf } from "../utils/exportSummaryPdf";
+import { getCachedTabData } from "../utils/tabCache";
 
 const TABS = ["Chat", "Summary", "Entities", "Classification", "Risk Flags", "Analytics"];
 
@@ -182,7 +183,7 @@ function ChatTab({ documentId, messages, setMessages }) {
   );
 }
 
-function SummaryTab({ documentId, documentName }) {
+function SummaryTab({ documentId, documentName, cache }) {
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -192,8 +193,10 @@ function SummaryTab({ documentId, documentName }) {
 
     async function fetchSummary() {
       try {
-        const { data } = await api.get(`/api/documents/${documentId}/summary`);
-        if (isMounted) setSummary(data.summary);
+        const result = await getCachedTabData(cache, documentId, "summary", () =>
+          api.get(`/api/documents/${documentId}/summary`).then((r) => r.data.summary)
+        );
+        if (isMounted) setSummary(result);
       } catch (err) {
         if (isMounted) setError(err.response?.data?.error || "Failed to load summary");
       } finally {
@@ -205,7 +208,7 @@ function SummaryTab({ documentId, documentName }) {
     return () => {
       isMounted = false;
     };
-  }, [documentId]);
+  }, [documentId, cache]);
 
   if (loading) return <p className="text-sm text-gray-500">Generating summary...</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
@@ -225,7 +228,7 @@ function SummaryTab({ documentId, documentName }) {
   );
 }
 
-function EntitiesTab({ documentId }) {
+function EntitiesTab({ documentId, cache }) {
   const [entities, setEntities] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -235,8 +238,10 @@ function EntitiesTab({ documentId }) {
 
     async function fetchEntities() {
       try {
-        const { data } = await api.get(`/api/documents/${documentId}/entities`);
-        if (isMounted) setEntities(data.entities);
+        const result = await getCachedTabData(cache, documentId, "entities", () =>
+          api.get(`/api/documents/${documentId}/entities`).then((r) => r.data.entities)
+        );
+        if (isMounted) setEntities(result);
       } catch (err) {
         if (isMounted) setError(err.response?.data?.error || "Failed to load entities");
       } finally {
@@ -248,7 +253,7 @@ function EntitiesTab({ documentId }) {
     return () => {
       isMounted = false;
     };
-  }, [documentId]);
+  }, [documentId, cache]);
 
   if (loading) return <p className="text-sm text-gray-500">Extracting entities...</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
@@ -282,7 +287,7 @@ function EntitiesTab({ documentId }) {
   );
 }
 
-function ClassificationTab({ documentId }) {
+function ClassificationTab({ documentId, cache }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -292,7 +297,9 @@ function ClassificationTab({ documentId }) {
 
     async function fetchClassification() {
       try {
-        const { data } = await api.get(`/api/documents/${documentId}/classify`);
+        const data = await getCachedTabData(cache, documentId, "classification", () =>
+          api.get(`/api/documents/${documentId}/classify`).then((r) => r.data)
+        );
         if (isMounted) setResult(data);
       } catch (err) {
         if (isMounted) setError(err.response?.data?.error || "Failed to classify document");
@@ -305,7 +312,7 @@ function ClassificationTab({ documentId }) {
     return () => {
       isMounted = false;
     };
-  }, [documentId]);
+  }, [documentId, cache]);
 
   if (loading) return <p className="text-sm text-gray-500">Classifying document...</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
@@ -338,7 +345,7 @@ function ClassificationTab({ documentId }) {
   );
 }
 
-function RiskFlagsTab({ documentId }) {
+function RiskFlagsTab({ documentId, cache }) {
   const [risks, setRisks] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -348,8 +355,10 @@ function RiskFlagsTab({ documentId }) {
 
     async function fetchRiskFlags() {
       try {
-        const { data } = await api.get(`/api/documents/${documentId}/risk-flags`);
-        if (isMounted) setRisks(data.risks || []);
+        const result = await getCachedTabData(cache, documentId, "risk-flags", () =>
+          api.get(`/api/documents/${documentId}/risk-flags`).then((r) => r.data.risks || [])
+        );
+        if (isMounted) setRisks(result);
       } catch (err) {
         if (isMounted) setError(err.response?.data?.error || "Failed to load risk flags");
       } finally {
@@ -361,7 +370,7 @@ function RiskFlagsTab({ documentId }) {
     return () => {
       isMounted = false;
     };
-  }, [documentId]);
+  }, [documentId, cache]);
 
   if (loading) return <p className="text-sm text-gray-500">Scanning for risks...</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
@@ -398,6 +407,7 @@ export default function DocumentView() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("Chat");
   const [chatMessages, setChatMessages] = useState([]);
+  const cache = useRef({});
 
   useEffect(() => {
     let isMounted = true;
@@ -493,15 +503,19 @@ export default function DocumentView() {
                 <ChatTab documentId={id} messages={chatMessages} setMessages={setChatMessages} />
               )}
               {activeTab === "Summary" && (
-                <SummaryTab documentId={id} documentName={doc.originalName} />
+                <SummaryTab documentId={id} documentName={doc.originalName} cache={cache} />
               )}
-              {activeTab === "Entities" && <EntitiesTab documentId={id} />}
-              {activeTab === "Classification" && <ClassificationTab documentId={id} />}
-              {activeTab === "Risk Flags" && <RiskFlagsTab documentId={id} />}
+              {activeTab === "Entities" && <EntitiesTab documentId={id} cache={cache} />}
+              {activeTab === "Classification" && (
+                <ClassificationTab documentId={id} cache={cache} />
+              )}
+              {activeTab === "Risk Flags" && <RiskFlagsTab documentId={id} cache={cache} />}
               {activeTab === "Analytics" && (
                 <AnalyticsPanel
                   fetchAnalytics={() =>
-                    api.get(`/api/documents/${id}/analytics`).then((r) => r.data.analytics)
+                    getCachedTabData(cache, id, "analytics", () =>
+                      api.get(`/api/documents/${id}/analytics`).then((r) => r.data.analytics)
+                    )
                   }
                 />
               )}

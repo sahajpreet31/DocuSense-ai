@@ -5,7 +5,7 @@ import api from "../services/api";
 import AnalyticsPanel from "../components/AnalyticsPanel";
 import { exportSummaryAsPdf } from "../utils/exportSummaryPdf";
 
-const TABS = ["Chat", "Summary", "Entities", "Classification", "Analytics"];
+const TABS = ["Chat", "Summary", "Entities", "Classification", "Risk Flags", "Analytics"];
 
 const CATEGORY_STYLES = {
   contract: "bg-indigo-100 text-indigo-700",
@@ -29,6 +29,12 @@ const ENTITY_LABELS = {
   dates: "Dates",
   money: "Money",
   locations: "Locations",
+};
+
+const SEVERITY_STYLES = {
+  high: "bg-red-100 text-red-700",
+  medium: "bg-orange-100 text-orange-700",
+  low: "bg-yellow-100 text-yellow-700",
 };
 
 function categoryStyle(category) {
@@ -332,6 +338,59 @@ function ClassificationTab({ documentId }) {
   );
 }
 
+function RiskFlagsTab({ documentId }) {
+  const [risks, setRisks] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchRiskFlags() {
+      try {
+        const { data } = await api.get(`/api/documents/${documentId}/risk-flags`);
+        if (isMounted) setRisks(data.risks || []);
+      } catch (err) {
+        if (isMounted) setError(err.response?.data?.error || "Failed to load risk flags");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    fetchRiskFlags();
+    return () => {
+      isMounted = false;
+    };
+  }, [documentId]);
+
+  if (loading) return <p className="text-sm text-gray-500">Scanning for risks...</p>;
+  if (error) return <p className="text-sm text-red-600">{error}</p>;
+
+  if (!risks || risks.length === 0) {
+    return <p className="text-sm text-gray-400">No risk flags detected.</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {risks.map((risk, index) => (
+        <div key={index} className="border border-gray-100 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <h4 className="font-semibold text-gray-900 text-sm">{risk.title}</h4>
+            <span
+              className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                SEVERITY_STYLES[risk.severity] || "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {risk.severity}
+            </span>
+          </div>
+          <p className="text-sm text-gray-600">{risk.description}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function DocumentView() {
   const { id } = useParams();
   const [doc, setDoc] = useState(null);
@@ -414,12 +473,12 @@ export default function DocumentView() {
             </div>
 
             <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <div className="flex gap-2 border-b border-gray-100 mb-6">
+              <div className="flex gap-2 border-b border-gray-100 mb-6 overflow-x-auto">
                 {TABS.map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-2.5 text-sm font-medium border-b-2 transition ${
+                    className={`px-4 py-2.5 text-sm font-medium border-b-2 transition whitespace-nowrap ${
                       activeTab === tab
                         ? "border-indigo-600 text-indigo-600"
                         : "border-transparent text-gray-500 hover:text-gray-700"
@@ -438,6 +497,7 @@ export default function DocumentView() {
               )}
               {activeTab === "Entities" && <EntitiesTab documentId={id} />}
               {activeTab === "Classification" && <ClassificationTab documentId={id} />}
+              {activeTab === "Risk Flags" && <RiskFlagsTab documentId={id} />}
               {activeTab === "Analytics" && (
                 <AnalyticsPanel
                   fetchAnalytics={() =>

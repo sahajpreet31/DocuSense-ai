@@ -10,6 +10,7 @@ const {
   getSummary,
   getEntities,
   getClassification,
+  getRiskFlags,
   getAnalytics,
 } = require("../controllers/documentController");
 
@@ -36,6 +37,7 @@ router.post("/:id/chat", chatWithDocument);
 router.get("/:id/summary", getSummary);
 router.get("/:id/entities", getEntities);
 router.get("/:id/classify", getClassification);
+router.get("/:id/risk-flags", getRiskFlags);
 router.get("/:id/analytics", getAnalytics);
 
 module.exports = router;

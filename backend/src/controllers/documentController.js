@@ -175,6 +175,27 @@ async function getClassification(req, res) {
   res.json({ category: mlData.category, confidence: mlData.confidence });
 }
 
+async function getRiskFlags(req, res) {
+  const document = await Document.findOne({ _id: req.params.id, userId: req.userId });
+  if (!document) {
+    return res.status(404).json({ error: "Document not found" });
+  }
+
+  const mlResponse = await fetch(`${ML_SERVICE_URL}/risk-flags`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ document_id: document.documentId }),
+  });
+
+  const mlData = await mlResponse.json();
+  if (!mlResponse.ok) {
+    logMlServiceError(`${ML_SERVICE_URL}/risk-flags`, mlResponse.status, mlData);
+    return res.status(502).json({ error: "ML service risk-flags failed", details: mlData });
+  }
+
+  res.json({ risks: mlData.risks });
+}
+
 async function getAnalytics(req, res) {
   const document = await Document.findOne({ _id: req.params.id, userId: req.userId });
   if (!document) {
@@ -205,5 +226,6 @@ module.exports = {
   getSummary,
   getEntities,
   getClassification,
+  getRiskFlags,
   getAnalytics,
 };

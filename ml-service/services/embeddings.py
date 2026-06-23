@@ -52,3 +52,11 @@ def query_chunks(document_id, question, top_k=4):
     results = collection.query(query_embeddings=query_embedding, n_results=top_k)
 
     return results.get("documents", [[]])[0]
+
+
+def delete_chunks(document_id):
+    client = get_chroma_client()
+    try:
+        client.delete_collection(name=document_id)
+    except Exception:
+        pass

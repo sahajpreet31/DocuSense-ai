@@ -55,6 +55,12 @@ async function deleteDocument(req, res) {
     return res.status(404).json({ error: "Document not found" });
   }
 
+  await fetch(`${ML_SERVICE_URL}/document`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ document_id: document.documentId }),
+  }).catch((err) => console.error("Failed to delete document from ML service:", err));
+
   res.json({ message: "Document deleted" });
 }
 

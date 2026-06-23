@@ -1,3 +1,4 @@
+import glob
 import os
 import uuid
 
@@ -7,7 +8,7 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 from services.pdf_processor import process_pdf
-from services.embeddings import store_chunks
+from services.embeddings import store_chunks, delete_chunks
 from services.rag_service import (
     answer_question,
     summarize_document,
@@ -63,6 +64,22 @@ def upload():
         "filename": filename,
         "chunks_stored": len(chunks),
     })
+
+
+@app.delete("/document")
+def delete_document():
+    data = request.get_json(silent=True) or {}
+    document_id = data.get("document_id")
+
+    if not document_id:
+        return jsonify({"error": "document_id is required"}), 400
+
+    delete_chunks(document_id)
+
+    for path in glob.glob(os.path.join(UPLOAD_DIR, f"{document_id}_*")):
+        os.remove(path)
+
+    return jsonify({"document_id": document_id, "deleted": True})
 
 
 @app.post("/chat")

@@ -11,6 +11,20 @@ const CATEGORY_STYLES = {
   research_paper: "bg-amber-100 text-amber-700",
 };
 
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
+      <path
+        d="M5 7h14M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-9 0l1 13a1 1 0 001 1h8a1 1 0 001-1l1-13"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function categoryStyle(category) {
   return CATEGORY_STYLES[category] || "bg-gray-100 text-gray-600";
 }
@@ -32,6 +46,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
 
   async function fetchDocuments() {
     try {
@@ -68,6 +83,26 @@ export default function Dashboard() {
     } finally {
       setUploading(false);
       e.target.value = "";
+    }
+  }
+
+  async function handleDelete(e, docId) {
+    e.stopPropagation();
+
+    if (!window.confirm("Are you sure you want to delete this document? This cannot be undone.")) {
+      return;
+    }
+
+    setDeletingId(docId);
+    setError("");
+
+    try {
+      await api.delete(`/api/documents/${docId}`);
+      setDocuments((prev) => prev.filter((doc) => doc._id !== docId));
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to delete document. Please try again.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -127,28 +162,41 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {documents.map((doc) => (
-              <button
+              <div
                 key={doc._id}
-                onClick={() => navigate(`/documents/${doc._id}`)}
-                className="text-left bg-white rounded-2xl shadow-sm hover:shadow-md border border-gray-100 p-5 transition"
+                className="relative group bg-white rounded-2xl shadow-sm hover:shadow-md border border-gray-100 transition"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-semibold text-xs">
-                    PDF
+                <button
+                  onClick={(e) => handleDelete(e, doc._id)}
+                  disabled={deletingId === doc._id}
+                  title="Delete document"
+                  className="absolute top-3 right-3 w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition opacity-0 group-hover:opacity-100 disabled:opacity-60"
+                >
+                  <TrashIcon />
+                </button>
+
+                <button
+                  onClick={() => navigate(`/documents/${doc._id}`)}
+                  className="w-full text-left p-5"
+                >
+                  <div className="flex items-start justify-between mb-3 pr-8">
+                    <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-semibold text-xs">
+                      PDF
+                    </div>
+                    {doc.category && (
+                      <span
+                        className={`text-xs font-medium px-2.5 py-1 rounded-full ${categoryStyle(
+                          doc.category
+                        )}`}
+                      >
+                        {doc.category.replace("_", " ")}
+                      </span>
+                    )}
                   </div>
-                  {doc.category && (
-                    <span
-                      className={`text-xs font-medium px-2.5 py-1 rounded-full ${categoryStyle(
-                        doc.category
-                      )}`}
-                    >
-                      {doc.category.replace("_", " ")}
-                    </span>
-                  )}
-                </div>
-                <h3 className="font-semibold text-gray-900 truncate mb-1">{doc.originalName}</h3>
-                <p className="text-xs text-gray-500">Uploaded {formatDate(doc.uploadedAt)}</p>
-              </button>
+                  <h3 className="font-semibold text-gray-900 truncate mb-1">{doc.originalName}</h3>
+                  <p className="text-xs text-gray-500">Uploaded {formatDate(doc.uploadedAt)}</p>
+                </button>
+              </div>
             ))}
           </div>
         )}

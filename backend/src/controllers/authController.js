@@ -54,4 +54,42 @@ async function login(req, res) {
   });
 }
 
-module.exports = { signup, login };
+async function updateProfile(req, res) {
+  const { name } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: "name is required" });
+  }
+
+  const user = await User.findByIdAndUpdate(req.userId, { name }, { new: true });
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  res.json({ user: { id: user._id, name: user.name, email: user.email } });
+}
+
+async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: "currentPassword and newPassword are required" });
+  }
+
+  const user = await User.findById(req.userId);
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    return res.status(401).json({ error: "Current password is incorrect" });
+  }
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+
+  res.json({ message: "Password updated successfully" });
+}
+
+module.exports = { signup, login, updateProfile, changePassword };

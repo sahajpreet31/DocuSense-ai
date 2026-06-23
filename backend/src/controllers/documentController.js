@@ -2,6 +2,12 @@ const Document = require("../models/Document");
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL;
 
+function logMlServiceError(url, status, body) {
+  console.error(
+    `ML service call failed: url=${url} status=${status} body=${JSON.stringify(body)}`
+  );
+}
+
 async function uploadDocument(req, res) {
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
@@ -17,6 +23,7 @@ async function uploadDocument(req, res) {
 
   if (!mlResponse.ok) {
     const details = await mlResponse.json().catch(() => ({}));
+    logMlServiceError(`${ML_SERVICE_URL}/upload`, mlResponse.status, details);
     return res.status(502).json({ error: "ML service upload failed", details });
   }
 
@@ -55,11 +62,22 @@ async function deleteDocument(req, res) {
     return res.status(404).json({ error: "Document not found" });
   }
 
-  await fetch(`${ML_SERVICE_URL}/document`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ document_id: document.documentId }),
-  }).catch((err) => console.error("Failed to delete document from ML service:", err));
+  try {
+    const mlResponse = await fetch(`${ML_SERVICE_URL}/document`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ document_id: document.documentId }),
+    });
+
+    if (!mlResponse.ok) {
+      const details = await mlResponse.json().catch(() => ({}));
+      logMlServiceError(`${ML_SERVICE_URL}/document`, mlResponse.status, details);
+    }
+  } catch (err) {
+    console.error(
+      `ML service call failed: url=${ML_SERVICE_URL}/document status=network_error body=${err.message}`
+    );
+  }
 
   res.json({ message: "Document deleted" });
 }
@@ -84,6 +102,7 @@ async function chatWithDocument(req, res) {
 
   const mlData = await mlResponse.json();
   if (!mlResponse.ok) {
+    logMlServiceError(`${ML_SERVICE_URL}/chat`, mlResponse.status, mlData);
     return res.status(502).json({ error: "ML service chat failed", details: mlData });
   }
 
@@ -104,6 +123,7 @@ async function getSummary(req, res) {
 
   const mlData = await mlResponse.json();
   if (!mlResponse.ok) {
+    logMlServiceError(`${ML_SERVICE_URL}/summarize`, mlResponse.status, mlData);
     return res.status(502).json({ error: "ML service summarize failed", details: mlData });
   }
 
@@ -124,6 +144,7 @@ async function getEntities(req, res) {
 
   const mlData = await mlResponse.json();
   if (!mlResponse.ok) {
+    logMlServiceError(`${ML_SERVICE_URL}/entities`, mlResponse.status, mlData);
     return res.status(502).json({ error: "ML service entities failed", details: mlData });
   }
 
@@ -144,6 +165,7 @@ async function getClassification(req, res) {
 
   const mlData = await mlResponse.json();
   if (!mlResponse.ok) {
+    logMlServiceError(`${ML_SERVICE_URL}/classify`, mlResponse.status, mlData);
     return res.status(502).json({ error: "ML service classify failed", details: mlData });
   }
 
@@ -167,6 +189,7 @@ async function getAnalytics(req, res) {
 
   const mlData = await mlResponse.json();
   if (!mlResponse.ok) {
+    logMlServiceError(`${ML_SERVICE_URL}/analytics`, mlResponse.status, mlData);
     return res.status(502).json({ error: "ML service analytics failed", details: mlData });
   }
 

@@ -124,6 +124,44 @@ function CheckIcon() {
   );
 }
 
+function BrainIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+      <path
+        d="M9 4a3 3 0 00-3 3 3 3 0 00-1.5 5.6A3 3 0 007 18a3 3 0 002-1 3 3 0 002 1 3 3 0 002.5-5.4A3 3 0 0015 7a3 3 0 00-3-3 3 3 0 00-3 0z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M9 4v14M15 7v11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+      <path
+        d="M5 7h14M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-9 0l1 13a1 1 0 001 1h8a1 1 0 001-1l1-13"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 const PRIVACY_POINTS = [
   {
     icon: ShieldIcon,
@@ -140,6 +178,40 @@ const PRIVACY_POINTS = [
     icon: CheckIcon,
     title: "Security & Compliance",
     description: "All data encrypted in transit and at rest. Industry-standard security practices.",
+  },
+];
+
+const SECURITY_PROCESS_STEPS = [
+  {
+    icon: UploadIcon,
+    title: "Data Collection",
+    description: "PDF uploaded securely over encrypted connection",
+  },
+  {
+    icon: BrainIcon,
+    title: "AI/ML Engine",
+    description: "Document processed locally, embeddings generated",
+  },
+  {
+    icon: SearchIcon,
+    title: "Analysis",
+    description: "Content analyzed, insights extracted instantly",
+  },
+  {
+    icon: TrashIcon,
+    title: "Auto Delete",
+    description: "Original file deleted immediately after processing",
+  },
+];
+
+const DATA_STORAGE_COLUMNS = [
+  {
+    title: "Stored Temporarily",
+    items: ["Document embeddings for Q&A", "Chat history", "Document metadata"],
+  },
+  {
+    title: "Never Retained",
+    items: ["Original PDF files", "Personal document content", "Sensitive information"],
   },
 ];
 
@@ -216,6 +288,9 @@ export default function LandingPage() {
             <a href="#how-it-works" className="hover:text-indigo-600 transition">
               How It Works
             </a>
+            <a href="#privacy" className="hover:text-indigo-600 transition">
+              Data Privacy
+            </a>
           </div>
 
           <div className="flex items-center gap-3">
@@ -278,7 +353,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-6 py-20">
+      <section id="privacy" className="max-w-6xl mx-auto px-6 py-20">
         <div className="text-center mb-14">
           <h2 className="text-3xl font-bold mb-3">Your Privacy, Our Priority</h2>
         </div>
@@ -291,6 +366,48 @@ export default function LandingPage() {
               </div>
               <h3 className="font-semibold text-lg mb-2">{title}</h3>
               <p className="text-sm text-gray-500">{description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="bg-indigo-600">
+        <div className="max-w-6xl mx-auto px-6 py-20 text-white">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold mb-3">Our Data Security Process</h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {SECURITY_PROCESS_STEPS.map(({ icon: Icon, title, description }) => (
+              <div key={title} className="text-center">
+                <div className="w-14 h-14 mx-auto rounded-full bg-white/10 border border-white/20 flex items-center justify-center mb-4">
+                  <Icon />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{title}</h3>
+                <p className="text-indigo-100 text-sm max-w-xs mx-auto">{description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <div className="text-center mb-14">
+          <h2 className="text-3xl font-bold mb-3">Data Storage</h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {DATA_STORAGE_COLUMNS.map(({ title, items }) => (
+            <div key={title} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h3 className="font-semibold text-lg mb-4">{title}</h3>
+              <ul className="space-y-3">
+                {items.map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
           ))}
         </div>

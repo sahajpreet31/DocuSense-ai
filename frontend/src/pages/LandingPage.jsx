@@ -86,6 +86,63 @@ function TagIcon() {
   );
 }
 
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+      <path
+        d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+      <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 11V8a4 4 0 018 0v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="12" cy="15.5" r="1.3" fill="currentColor" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+      <path
+        d="M5 13l4 4L19 7"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+const PRIVACY_POINTS = [
+  {
+    icon: ShieldIcon,
+    title: "Data Deletion",
+    description:
+      "Delete your documents anytime. Files are permanently removed from all our systems instantly.",
+  },
+  {
+    icon: LockIcon,
+    title: "No AI Training",
+    description: "Your documents are never used to train AI models. Your data belongs to you alone.",
+  },
+  {
+    icon: CheckIcon,
+    title: "Security & Compliance",
+    description: "All data encrypted in transit and at rest. Industry-standard security practices.",
+  },
+];
+
 const FEATURES = [
   {
     icon: UploadIcon,
@@ -159,9 +216,6 @@ export default function LandingPage() {
             <a href="#how-it-works" className="hover:text-indigo-600 transition">
               How It Works
             </a>
-            <Link to="/data-privacy" className="hover:text-indigo-600 transition">
-              Data Privacy
-            </Link>
           </div>
 
           <div className="flex items-center gap-3">
@@ -220,6 +274,24 @@ export default function LandingPage() {
               <h3 className="font-semibold text-lg mb-2">{title}</h3>
               <p className="text-sm text-gray-500">{description}</p>
             </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <div className="text-center mb-14">
+          <h2 className="text-3xl font-bold mb-3">Your Privacy, Our Priority</h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {PRIVACY_POINTS.map(({ icon: Icon, title, description }) => (
+            <div key={title} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
+                <Icon />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">{title}</h3>
+              <p className="text-sm text-gray-500">{description}</p>
+            </div>
           ))}
         </div>
       </section>

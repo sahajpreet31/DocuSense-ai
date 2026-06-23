@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 function UploadIcon() {
@@ -199,19 +200,9 @@ const SECURITY_PROCESS_STEPS = [
   },
   {
     icon: TrashIcon,
-    title: "Auto Delete",
-    description: "Original file deleted immediately after processing",
-  },
-];
-
-const DATA_STORAGE_COLUMNS = [
-  {
-    title: "Stored Temporarily",
-    items: ["Document embeddings for Q&A", "Chat history", "Document metadata"],
-  },
-  {
-    title: "Never Retained",
-    items: ["Original PDF files", "Personal document content", "Sensitive information"],
+    title: "You're in Control",
+    description:
+      "Delete documents whenever you choose. Your data, your rules — remove anything anytime with one click.",
   },
 ];
 
@@ -267,6 +258,24 @@ const STEPS = [
 ];
 
 export default function LandingPage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(localStorage.getItem("token")));
+  const [userEmail, setUserEmail] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"))?.email || "";
+    } catch {
+      return "";
+    }
+  });
+
+  const ctaTarget = isLoggedIn ? "/dashboard" : "/signup";
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setUserEmail("");
+  }
+
   return (
     <div className="min-h-screen bg-surface text-gray-900">
       <nav className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-gray-100">
@@ -294,25 +303,39 @@ export default function LandingPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              to="/demo"
-              className="border border-indigo-600 text-indigo-600 hover:bg-indigo-50 text-sm font-semibold rounded-lg px-5 py-2.5 transition"
-            >
-              Try Demo
-            </Link>
-            <Link
-              to="/signup"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg px-5 py-2.5 transition"
-            >
-              Get Started
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <span className="text-sm text-gray-600 hidden sm:inline">{userEmail}</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm font-semibold text-gray-600 hover:text-indigo-600 transition"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/demo"
+                  className="border border-indigo-600 text-indigo-600 hover:bg-indigo-50 text-sm font-semibold rounded-lg px-5 py-2.5 transition"
+                >
+                  Try Demo
+                </Link>
+                <Link
+                  to="/signup"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg px-5 py-2.5 transition"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
 
       <section id="home" className="max-w-4xl mx-auto px-6 pt-24 pb-20 text-center">
         <span className="inline-block bg-indigo-100 text-indigo-600 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
-          Powered by AI
+          RAG Powered
         </span>
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6">
           Intelligent Document Analysis
@@ -322,7 +345,7 @@ export default function LandingPage() {
           for you — turning hours of reading into seconds of insight.
         </p>
         <Link
-          to="/signup"
+          to={ctaTarget}
           className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg rounded-xl px-8 py-3.5 transition shadow-lg shadow-indigo-200"
         >
           Start Analyzing
@@ -340,7 +363,7 @@ export default function LandingPage() {
           {FEATURES.map(({ icon: Icon, title, description }) => (
             <Link
               key={title}
-              to="/signup"
+              to={ctaTarget}
               className="block bg-white rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 p-6 transition cursor-pointer hover:-translate-y-1"
             >
               <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
@@ -350,6 +373,27 @@ export default function LandingPage() {
               <p className="text-sm text-gray-500">{description}</p>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section id="how-it-works" className="bg-indigo-600">
+        <div className="max-w-6xl mx-auto px-6 py-20 text-white">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold mb-3">How It Works</h2>
+            <p className="text-indigo-200">From upload to insight in three simple steps.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
+            {STEPS.map(({ number, title, description }) => (
+              <div key={number} className="text-center">
+                <div className="w-14 h-14 mx-auto rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-xl font-bold mb-5">
+                  {number}
+                </div>
+                <h3 className="font-semibold text-xl mb-2">{title}</h3>
+                <p className="text-indigo-100 text-sm max-w-xs mx-auto">{description}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -384,49 +428,6 @@ export default function LandingPage() {
                   <Icon />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">{title}</h3>
-                <p className="text-indigo-100 text-sm max-w-xs mx-auto">{description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl font-bold mb-3">Data Storage</h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {DATA_STORAGE_COLUMNS.map(({ title, items }) => (
-            <div key={title} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h3 className="font-semibold text-lg mb-4">{title}</h3>
-              <ul className="space-y-3">
-                {items.map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="how-it-works" className="bg-indigo-600">
-        <div className="max-w-6xl mx-auto px-6 py-20 text-white">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold mb-3">How It Works</h2>
-            <p className="text-indigo-200">From upload to insight in three simple steps.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
-            {STEPS.map(({ number, title, description }) => (
-              <div key={number} className="text-center">
-                <div className="w-14 h-14 mx-auto rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-xl font-bold mb-5">
-                  {number}
-                </div>
-                <h3 className="font-semibold text-xl mb-2">{title}</h3>
                 <p className="text-indigo-100 text-sm max-w-xs mx-auto">{description}</p>
               </div>
             ))}

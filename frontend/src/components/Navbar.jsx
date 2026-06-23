@@ -1,11 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
 
-function getUserInitial() {
+function getUserEmail() {
   try {
     const user = JSON.parse(localStorage.getItem("user"));
-    return user?.name?.charAt(0)?.toUpperCase() || "U";
+    return user?.email || "";
   } catch {
-    return "U";
+    return "";
   }
 }
 
@@ -15,25 +15,26 @@ export default function Navbar() {
   function handleLogout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/login");
+    navigate("/");
   }
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
-      <Link to="/dashboard" className="flex items-center gap-2">
+      <Link to="/" className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold">
           D
         </div>
         <span className="text-lg font-bold text-gray-900">DocuSense AI</span>
       </Link>
 
-      <div className="flex items-center gap-4">
-        <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-sm">
-          {getUserInitial()}
-        </div>
+      <div className="flex items-center gap-6">
+        <Link to="/dashboard" className="text-sm font-medium text-gray-600 hover:text-indigo-600 transition">
+          Dashboard
+        </Link>
+        <span className="text-sm text-gray-500 hidden sm:inline">{getUserEmail()}</span>
         <button
           onClick={handleLogout}
-          className="text-sm text-gray-500 hover:text-indigo-600 transition"
+          className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition"
         >
           Logout
         </button>

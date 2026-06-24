@@ -27,12 +27,47 @@ RISK_PROMPT = (
 )
 
 CLASSIFY_PROMPT = (
-    "Classify this document into exactly one of the following categories: "
-    "contract, invoice, report, resume, research_paper. "
+    "Classify this document into exactly one of the following categories:\n\n"
+    "- contract: Legal agreements, NDAs, employment contracts, service agreements, "
+    "terms and conditions\n"
+    "- invoice: Bills, payment requests, receipts, purchase orders, financial statements\n"
+    "- report: Analysis reports, annual reports, progress reports, technical reports, "
+    "business reports\n"
+    "- resume: Personal CVs showing an individual person's education, work history, "
+    "skills and achievements\n"
+    "- job_description: Job postings, vacancy listings, role requirements, hiring "
+    "announcements\n"
+    "- research_paper: Academic papers, scientific studies, literature reviews, thesis, "
+    "dissertations\n"
+    "- study_material: Lecture notes, course materials, textbooks, study guides, "
+    "educational content, syllabus\n"
+    "- assignment: Homework, assignments, problem sets, coursework, project submissions\n"
+    "- exam_paper: Question papers, past papers, mock tests, practice exams\n"
+    "- certificate: Degree certificates, course completion certificates, awards, "
+    "transcripts, mark sheets\n"
+    "- other: Anything that doesn't fit above categories\n\n"
+    "CRITICAL DISTINCTIONS:\n"
+    "- study_material = educational content meant for learning (notes, slides, textbooks)\n"
+    "- assignment = work submitted by a student for evaluation\n"
+    "- exam_paper = questions to be answered in an exam\n"
+    "- certificate = official document proving completion or achievement\n"
+    "- research_paper = formal academic publication with methodology and findings\n\n"
     "Respond with ONLY the category name, nothing else.\n\nDocument:\n{text}"
 )
 
-VALID_CATEGORIES = ["contract", "invoice", "report", "resume", "research_paper"]
+VALID_CATEGORIES = [
+    "contract",
+    "invoice",
+    "report",
+    "resume",
+    "job_description",
+    "research_paper",
+    "study_material",
+    "assignment",
+    "exam_paper",
+    "certificate",
+    "other",
+]
 
 _client = None
 
@@ -128,6 +163,6 @@ def classify_document(document_id):
     response = generate_content(prompt)
 
     raw = response.text.strip().lower()
-    category = next((c for c in VALID_CATEGORIES if c in raw), "report")
+    category = next((c for c in VALID_CATEGORIES if c in raw), "other")
 
     return category, 0.95

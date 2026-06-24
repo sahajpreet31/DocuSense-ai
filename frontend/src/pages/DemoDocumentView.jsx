@@ -12,6 +12,7 @@ import {
 import { ChatIcon, SummaryIcon, EntityIcon, TagIcon, AlertIcon, BarChartIcon, BotIcon } from "../components/TabIcons";
 import { exportSummaryAsPdf } from "../utils/exportSummaryPdf";
 import { getCachedTabData, getCachedTabDataSync } from "../utils/tabCache";
+import { categoryStyle, categoryLabel } from "../utils/categoryStyles";
 
 const ML_SERVICE_URL = "https://sahajpreek19-docusense-ml.hf.space";
 
@@ -23,14 +24,6 @@ const TABS_CONFIG = [
   { name: "Risk Flags", icon: AlertIcon },
   { name: "Analytics", icon: BarChartIcon },
 ];
-
-const CATEGORY_STYLES = {
-  contract: "bg-indigo-100 text-indigo-700",
-  invoice: "bg-emerald-100 text-emerald-700",
-  report: "bg-blue-100 text-blue-700",
-  resume: "bg-purple-100 text-purple-700",
-  research_paper: "bg-amber-100 text-amber-700",
-};
 
 const ENTITY_STYLES = {
   names: "bg-blue-100 text-blue-700",
@@ -53,10 +46,6 @@ const SEVERITY_STYLES = {
   medium: "bg-orange-100 text-orange-700",
   low: "bg-yellow-100 text-yellow-700",
 };
-
-function categoryStyle(category) {
-  return CATEGORY_STYLES[category] || "bg-gray-100 text-gray-600";
-}
 
 function formatTime(timestamp) {
   if (!timestamp) return "";
@@ -415,7 +404,7 @@ function ClassificationTab({ documentId, cache }) {
           result?.category
         )}`}
       >
-        {result?.category?.replace("_", " ")}
+        {categoryLabel(result?.category)}
       </span>
 
       <div>

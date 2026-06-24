@@ -1,15 +1,8 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { categoryStyle, categoryLabel } from "../utils/categoryStyles";
 
 const ML_SERVICE_URL = "https://sahajpreek19-docusense-ml.hf.space";
-
-const CATEGORY_STYLES = {
-  contract: "bg-indigo-100 text-indigo-700",
-  invoice: "bg-emerald-100 text-emerald-700",
-  report: "bg-blue-100 text-blue-700",
-  resume: "bg-purple-100 text-purple-700",
-  research_paper: "bg-amber-100 text-amber-700",
-};
 
 const SAMPLE_DOCUMENTS = [
   { id: "sample-1", name: "Employment_Contract.pdf", category: "contract", date: "Jan 15, 2024" },
@@ -119,9 +112,9 @@ export default function DemoDashboard() {
                   PDF
                 </div>
                 <span
-                  className={`text-xs font-medium px-2.5 py-1 rounded-full ${CATEGORY_STYLES[doc.category]}`}
+                  className={`text-xs font-medium px-2.5 py-1 rounded-full ${categoryStyle(doc.category)}`}
                 >
-                  {doc.category.replace("_", " ")}
+                  {categoryLabel(doc.category)}
                 </span>
               </div>
               <h3 className="font-semibold text-gray-900 truncate mb-1">{doc.name}</h3>

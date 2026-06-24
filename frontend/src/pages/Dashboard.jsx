@@ -3,14 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import api from "../services/api";
 import { timeAgo } from "../utils/timeAgo";
-
-const CATEGORY_STYLES = {
-  contract: "bg-indigo-100 text-indigo-700",
-  invoice: "bg-emerald-100 text-emerald-700",
-  report: "bg-blue-100 text-blue-700",
-  resume: "bg-purple-100 text-purple-700",
-  research_paper: "bg-amber-100 text-amber-700",
-};
+import { categoryStyle, categoryLabel } from "../utils/categoryStyles";
 
 function TrashIcon() {
   return (
@@ -48,10 +41,6 @@ function CheckCircleIcon() {
       <path d="M8.5 12.5l2.3 2.3 4.7-5.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
-}
-
-function categoryStyle(category) {
-  return CATEGORY_STYLES[category] || "bg-gray-100 text-gray-600";
 }
 
 function formatDate(dateString) {
@@ -266,7 +255,7 @@ export default function Dashboard() {
                             doc.category
                           )}`}
                         >
-                          {doc.category.replace("_", " ")}
+                          {categoryLabel(doc.category)}
                         </span>
                       )}
                       <button
@@ -331,7 +320,7 @@ export default function Dashboard() {
                           doc.category
                         )}`}
                       >
-                        {doc.category.replace("_", " ")}
+                        {categoryLabel(doc.category)}
                       </span>
                     )}
                   </div>

@@ -1,3 +1,7 @@
+export function getCachedTabDataSync(cache, documentId, tabName) {
+  return cache.current[documentId]?.[tabName];
+}
+
 export async function getCachedTabData(cache, documentId, tabName, fetchFn) {
   if (!cache.current[documentId]) {
     cache.current[documentId] = {};

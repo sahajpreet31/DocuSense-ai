@@ -312,24 +312,33 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      <section id="home" className="max-w-4xl mx-auto px-6 pt-24 pb-20 text-center">
-        <span className="inline-block bg-indigo-100 text-indigo-600 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
-          RAG Powered
-        </span>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6">
-          Intelligent Document Analysis
-        </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-10">
-          Upload any document and let DocuSense AI summarize, chat, and extract key information
-          for you — turning hours of reading into seconds of insight.
-        </p>
-        <Link
-          to={ctaTarget}
-          className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg rounded-xl px-8 py-3.5 transition shadow-lg shadow-indigo-200"
-        >
-          Start Analyzing
-          <span aria-hidden="true">→</span>
-        </Link>
+      <section id="home" className="relative overflow-hidden">
+        <div
+          className="absolute inset-0 -z-10 animate-gradientShift"
+          style={{
+            backgroundImage: "linear-gradient(120deg, #f0f4ff, #e8eeff, #f5f0ff, #e8eeff, #f0f4ff)",
+            backgroundSize: "200% 200%",
+          }}
+        />
+        <div className="max-w-4xl mx-auto px-6 pt-24 pb-20 text-center">
+          <span className="inline-block bg-indigo-100 text-indigo-600 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+            RAG Powered
+          </span>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6">
+            Intelligent Document Analysis
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-10">
+            Upload any document and let DocuSense AI summarize, chat, and extract key information
+            for you — turning hours of reading into seconds of insight.
+          </p>
+          <Link
+            to={ctaTarget}
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg rounded-xl px-8 py-3.5 transition shadow-lg shadow-indigo-200"
+          >
+            Start Analyzing
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
       </section>
 
       <section id="features" className="max-w-6xl mx-auto px-6 py-20">

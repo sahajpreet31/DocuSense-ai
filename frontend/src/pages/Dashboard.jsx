@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import api from "../services/api";
+import { timeAgo } from "../utils/timeAgo";
 
 const CATEGORY_STYLES = {
   contract: "bg-indigo-100 text-indigo-700",
@@ -25,6 +26,30 @@ function TrashIcon() {
   );
 }
 
+function DocIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+      <path
+        d="M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M14 3v5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CheckCircleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8.5 12.5l2.3 2.3 4.7-5.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function categoryStyle(category) {
   return CATEGORY_STYLES[category] || "bg-gray-100 text-gray-600";
 }
@@ -38,15 +63,30 @@ function formatDate(dateString) {
   });
 }
 
+function isToday(dateString) {
+  if (!dateString) return false;
+  const date = new Date(dateString);
+  const now = new Date();
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const toastTimeoutRef = useRef(null);
 
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState(null);
+  const [toast, setToast] = useState("");
 
   async function fetchDocuments() {
     try {
@@ -61,7 +101,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDocuments();
+    return () => clearTimeout(toastTimeoutRef.current);
   }, []);
+
+  function showToast(message) {
+    setToast(message);
+    clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => setToast(""), 3000);
+  }
 
   async function handleFileSelected(e) {
     const file = e.target.files?.[0];
@@ -71,17 +118,28 @@ export default function Dashboard() {
     formData.append("file", file);
 
     setUploading(true);
+    setUploadProgress(0);
+    setProcessing(false);
     setError("");
 
     try {
       await api.post("/api/documents/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent) => {
+          if (!progressEvent.total) return;
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percent);
+          if (percent >= 100) setProcessing(true);
+        },
       });
       await fetchDocuments();
+      showToast("Document uploaded and analyzed successfully.");
     } catch (err) {
       setError(err.response?.data?.error || "Upload failed. Please try again.");
     } finally {
       setUploading(false);
+      setUploadProgress(0);
+      setProcessing(false);
       e.target.value = "";
     }
   }
@@ -106,6 +164,10 @@ export default function Dashboard() {
     }
   }
 
+  const totalDocuments = documents.length;
+  const analyzedToday = documents.filter((doc) => isToday(doc.uploadedAt)).length;
+  const recentDocuments = documents.slice(0, 3);
+
   return (
     <div className="min-h-screen bg-surface">
       <Navbar />
@@ -118,13 +180,32 @@ export default function Dashboard() {
           </div>
 
           <div>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg px-5 py-2.5 text-sm transition disabled:opacity-60"
-            >
-              {uploading ? "Uploading..." : "+ Upload New Document"}
-            </button>
+            {!uploading ? (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg px-5 py-2.5 text-sm transition"
+              >
+                + Upload New Document
+              </button>
+            ) : processing ? (
+              <div className="flex items-center gap-2 text-sm text-gray-600 font-medium px-1 py-2.5">
+                <span className="w-4 h-4 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+                Processing document...
+              </div>
+            ) : (
+              <div className="w-52">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Uploading...</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-600 rounded-full transition-all"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
             <input
               ref={fileInputRef}
               type="file"
@@ -139,6 +220,67 @@ export default function Dashboard() {
           <div className="mb-6 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
             {error}
           </div>
+        )}
+
+        {!loading && documents.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <DocIcon />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Total Documents</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalDocuments}</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <CheckCircleIcon />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Analyzed Today</p>
+                  <p className="text-2xl font-bold text-gray-900">{analyzedToday}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <h2 className="text-sm font-semibold text-gray-700 mb-3">Recent Activity</h2>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-100">
+                {recentDocuments.map((doc) => (
+                  <div key={doc._id} className="flex items-center justify-between gap-4 px-5 py-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-semibold text-xs flex-shrink-0">
+                        PDF
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{doc.originalName}</p>
+                        <p className="text-xs text-gray-400">{timeAgo(doc.uploadedAt)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      {doc.category && (
+                        <span
+                          className={`text-xs font-medium px-2.5 py-1 rounded-full ${categoryStyle(
+                            doc.category
+                          )}`}
+                        >
+                          {doc.category.replace("_", " ")}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => navigate(`/documents/${doc._id}`)}
+                        className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                      >
+                        Open
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         {loading ? (
@@ -201,6 +343,12 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 bg-gray-900 text-white text-sm font-medium px-4 py-3 rounded-lg shadow-lg animate-fadeIn z-50">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

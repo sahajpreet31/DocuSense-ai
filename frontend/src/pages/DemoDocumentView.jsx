@@ -1,11 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import AnalyticsPanel from "../components/AnalyticsPanel";
+import EmptyState from "../components/EmptyState";
+import TabBar from "../components/TabBar";
+import {
+  SummarySkeleton,
+  EntitiesSkeleton,
+  ClassificationSkeleton,
+  RiskFlagsSkeleton,
+} from "../components/Skeleton";
+import { ChatIcon, SummaryIcon, EntityIcon, TagIcon, AlertIcon, BarChartIcon, BotIcon } from "../components/TabIcons";
 import { exportSummaryAsPdf } from "../utils/exportSummaryPdf";
-import { getCachedTabData } from "../utils/tabCache";
+import { getCachedTabData, getCachedTabDataSync } from "../utils/tabCache";
 
 const ML_SERVICE_URL = "https://sahajpreek19-docusense-ml.hf.space";
-const TABS = ["Chat", "Summary", "Entities", "Classification", "Risk Flags", "Analytics"];
+
+const TABS_CONFIG = [
+  { name: "Chat", icon: ChatIcon },
+  { name: "Summary", icon: SummaryIcon },
+  { name: "Entities", icon: EntityIcon },
+  { name: "Classification", icon: TagIcon },
+  { name: "Risk Flags", icon: AlertIcon },
+  { name: "Analytics", icon: BarChartIcon },
+];
 
 const CATEGORY_STYLES = {
   contract: "bg-indigo-100 text-indigo-700",
@@ -33,12 +50,17 @@ const ENTITY_LABELS = {
 
 const SEVERITY_STYLES = {
   high: "bg-red-100 text-red-700",
-  medium: "bg-amber-100 text-amber-700",
-  low: "bg-emerald-100 text-emerald-700",
+  medium: "bg-orange-100 text-orange-700",
+  low: "bg-yellow-100 text-yellow-700",
 };
 
 function categoryStyle(category) {
   return CATEGORY_STYLES[category] || "bg-gray-100 text-gray-600";
+}
+
+function formatTime(timestamp) {
+  if (!timestamp) return "";
+  return new Date(timestamp).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
 async function callMlService(path, body) {
@@ -107,7 +129,7 @@ function ChatTab({ documentId, messages, setMessages }) {
     e.preventDefault();
     if (!question.trim()) return;
 
-    const userMessage = { role: "user", text: question };
+    const userMessage = { role: "user", text: question, timestamp: Date.now() };
     setMessages((prev) => [...prev, userMessage]);
     setQuestion("");
     setSending(true);
@@ -118,7 +140,7 @@ function ChatTab({ documentId, messages, setMessages }) {
         document_id: documentId,
         question: userMessage.text,
       });
-      setMessages((prev) => [...prev, { role: "ai", text: data.answer }]);
+      setMessages((prev) => [...prev, { role: "ai", text: data.answer, timestamp: Date.now() }]);
     } catch (err) {
       setError(err.message || "Failed to get a response. Please try again.");
     } finally {
@@ -128,32 +150,53 @@ function ChatTab({ documentId, messages, setMessages }) {
 
   return (
     <div className="flex flex-col h-[28rem]">
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+      <div className="flex-1 overflow-y-auto space-y-4 pr-1">
         {messages.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center mt-16">
-            Ask a question about this document to get started.
-          </p>
+          <EmptyState
+            icon={ChatIcon}
+            title="Start a conversation"
+            description="Ask a question about this document to get started."
+          />
         ) : (
           messages.map((message, index) => (
             <div
               key={index}
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex items-end gap-2 animate-fadeIn ${
+                message.role === "user" ? "justify-end" : "justify-start"
+              }`}
             >
+              {message.role === "ai" && (
+                <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                  <BotIcon className="w-4 h-4" />
+                </div>
+              )}
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
-                  message.role === "user"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-800"
+                className={`max-w-[75%] flex flex-col ${
+                  message.role === "user" ? "items-end" : "items-start"
                 }`}
               >
-                {message.text}
+                <div
+                  className={`px-4 py-2.5 text-sm ${
+                    message.role === "user"
+                      ? "bg-indigo-600 text-white rounded-2xl rounded-br-md"
+                      : "bg-white text-gray-800 shadow-sm border border-gray-100 rounded-2xl rounded-bl-md"
+                  }`}
+                >
+                  {message.text}
+                </div>
+                <span className="text-[11px] text-gray-400 mt-1 px-1">
+                  {formatTime(message.timestamp)}
+                </span>
               </div>
             </div>
           ))
         )}
         {sending && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-400 rounded-2xl px-4 py-2.5 text-sm">
+          <div className="flex items-end gap-2 justify-start animate-fadeIn">
+            <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+              <BotIcon className="w-4 h-4" />
+            </div>
+            <div className="bg-white shadow-sm border border-gray-100 text-gray-400 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm">
               Thinking...
             </div>
           </div>
@@ -183,33 +226,49 @@ function ChatTab({ documentId, messages, setMessages }) {
 }
 
 function SummaryTab({ documentId, documentName, cache }) {
-  const [summary, setSummary] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState(() => getCachedTabDataSync(cache, documentId, "summary"));
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
+  function handleGenerate() {
+    setLoading(true);
+    setError("");
 
     getCachedTabData(cache, documentId, "summary", () =>
       callMlService("/summarize", { document_id: documentId }).then((data) => data.summary)
     )
-      .then((result) => {
-        if (isMounted) setSummary(result);
-      })
-      .catch((err) => {
-        if (isMounted) setError(err.message || "Failed to load summary");
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+      .then((result) => setSummary(result))
+      .catch((err) => setError(err.message || "Failed to load summary"))
+      .finally(() => setLoading(false));
+  }
 
-    return () => {
-      isMounted = false;
-    };
-  }, [documentId, cache]);
+  if (loading) return <SummarySkeleton />;
 
-  if (loading) return <p className="text-sm text-gray-500">Generating summary...</p>;
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
+  if (error) {
+    return (
+      <div>
+        <p className="text-sm text-red-600 mb-3">{error}</p>
+        <button
+          onClick={handleGenerate}
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (summary === undefined) {
+    return (
+      <EmptyState
+        icon={SummaryIcon}
+        title="No summary yet"
+        description="Generate an AI-written summary covering this document's key points."
+        actionLabel="Generate Summary"
+        onAction={handleGenerate}
+      />
+    );
+  }
 
   return (
     <div>
@@ -227,33 +286,49 @@ function SummaryTab({ documentId, documentName, cache }) {
 }
 
 function EntitiesTab({ documentId, cache }) {
-  const [entities, setEntities] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [entities, setEntities] = useState(() => getCachedTabDataSync(cache, documentId, "entities"));
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
+  function handleGenerate() {
+    setLoading(true);
+    setError("");
 
     getCachedTabData(cache, documentId, "entities", () =>
       callMlService("/entities", { document_id: documentId }).then((data) => data.entities)
     )
-      .then((result) => {
-        if (isMounted) setEntities(result);
-      })
-      .catch((err) => {
-        if (isMounted) setError(err.message || "Failed to load entities");
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+      .then((result) => setEntities(result))
+      .catch((err) => setError(err.message || "Failed to load entities"))
+      .finally(() => setLoading(false));
+  }
 
-    return () => {
-      isMounted = false;
-    };
-  }, [documentId, cache]);
+  if (loading) return <EntitiesSkeleton />;
 
-  if (loading) return <p className="text-sm text-gray-500">Extracting entities...</p>;
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
+  if (error) {
+    return (
+      <div>
+        <p className="text-sm text-red-600 mb-3">{error}</p>
+        <button
+          onClick={handleGenerate}
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (entities === undefined) {
+    return (
+      <EmptyState
+        icon={EntityIcon}
+        title="No entities yet"
+        description="Extract names, organizations, dates, money, and locations from this document."
+        actionLabel="Extract Entities"
+        onAction={handleGenerate}
+      />
+    );
+  }
 
   const groups = Object.keys(ENTITY_LABELS).filter((key) => entities?.[key]?.length);
 
@@ -285,33 +360,51 @@ function EntitiesTab({ documentId, cache }) {
 }
 
 function ClassificationTab({ documentId, cache }) {
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState(() =>
+    getCachedTabDataSync(cache, documentId, "classification")
+  );
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
+  function handleGenerate() {
+    setLoading(true);
+    setError("");
 
     getCachedTabData(cache, documentId, "classification", () =>
       callMlService("/classify", { document_id: documentId })
     )
-      .then((data) => {
-        if (isMounted) setResult(data);
-      })
-      .catch((err) => {
-        if (isMounted) setError(err.message || "Failed to classify document");
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+      .then((data) => setResult(data))
+      .catch((err) => setError(err.message || "Failed to classify document"))
+      .finally(() => setLoading(false));
+  }
 
-    return () => {
-      isMounted = false;
-    };
-  }, [documentId, cache]);
+  if (loading) return <ClassificationSkeleton />;
 
-  if (loading) return <p className="text-sm text-gray-500">Classifying document...</p>;
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
+  if (error) {
+    return (
+      <div>
+        <p className="text-sm text-red-600 mb-3">{error}</p>
+        <button
+          onClick={handleGenerate}
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (result === undefined) {
+    return (
+      <EmptyState
+        icon={TagIcon}
+        title="Not classified yet"
+        description="Let AI identify whether this document is a contract, invoice, report, resume, or research paper."
+        actionLabel="Classify Document"
+        onAction={handleGenerate}
+      />
+    );
+  }
 
   const confidencePercent = Math.round((result?.confidence || 0) * 100);
 
@@ -332,7 +425,7 @@ function ClassificationTab({ documentId, cache }) {
         </div>
         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-indigo-600 rounded-full"
+            className="h-full bg-indigo-600 rounded-full transition-all duration-500"
             style={{ width: `${confidencePercent}%` }}
           />
         </div>
@@ -342,35 +435,51 @@ function ClassificationTab({ documentId, cache }) {
 }
 
 function RiskFlagsTab({ documentId, cache }) {
-  const [risks, setRisks] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [risks, setRisks] = useState(() => getCachedTabDataSync(cache, documentId, "risk-flags"));
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
+  function handleGenerate() {
+    setLoading(true);
+    setError("");
 
     getCachedTabData(cache, documentId, "risk-flags", () =>
       callMlService("/risk-flags", { document_id: documentId }).then((data) => data.risks || [])
     )
-      .then((result) => {
-        if (isMounted) setRisks(result);
-      })
-      .catch((err) => {
-        if (isMounted) setError(err.message || "Failed to load risk flags");
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+      .then((result) => setRisks(result))
+      .catch((err) => setError(err.message || "Failed to load risk flags"))
+      .finally(() => setLoading(false));
+  }
 
-    return () => {
-      isMounted = false;
-    };
-  }, [documentId, cache]);
+  if (loading) return <RiskFlagsSkeleton />;
 
-  if (loading) return <p className="text-sm text-gray-500">Scanning for risks...</p>;
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
+  if (error) {
+    return (
+      <div>
+        <p className="text-sm text-red-600 mb-3">{error}</p>
+        <button
+          onClick={handleGenerate}
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
-  if (!risks || risks.length === 0) {
+  if (risks === undefined) {
+    return (
+      <EmptyState
+        icon={AlertIcon}
+        title="No risk scan yet"
+        description="Scan this document for potentially risky clauses or terms."
+        actionLabel="Scan for Risks"
+        onAction={handleGenerate}
+      />
+    );
+  }
+
+  if (risks.length === 0) {
     return <p className="text-sm text-gray-400">No significant risks found in this document.</p>;
   }
 
@@ -395,12 +504,44 @@ function RiskFlagsTab({ documentId, cache }) {
   );
 }
 
+function AnalyticsTab({ documentId, cache }) {
+  const [started, setStarted] = useState(
+    () => getCachedTabDataSync(cache, documentId, "analytics") !== undefined
+  );
+
+  if (!started) {
+    return (
+      <EmptyState
+        icon={BarChartIcon}
+        title="No analytics yet"
+        description="Generate word count, readability, and keyword analytics for this document."
+        actionLabel="Generate Analytics"
+        onAction={() => setStarted(true)}
+      />
+    );
+  }
+
+  return (
+    <AnalyticsPanel
+      fetchAnalytics={() =>
+        getCachedTabData(cache, documentId, "analytics", () =>
+          callMlService("/analytics", { document_id: documentId }).then((data) => data.analytics)
+        )
+      }
+    />
+  );
+}
+
 export default function DemoDocumentView() {
   const { documentId } = useParams();
   const [activeTab, setActiveTab] = useState("Chat");
   const [chatMessages, setChatMessages] = useState([]);
   const documentName = localStorage.getItem("demo_document_name") || "Demo Document";
   const cache = useRef({});
+
+  useEffect(() => {
+    setChatMessages([]);
+  }, [documentId]);
 
   return (
     <div className="min-h-screen bg-surface">
@@ -452,44 +593,32 @@ export default function DemoDocumentView() {
           </div>
 
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <div className="flex gap-2 border-b border-gray-100 mb-6 overflow-x-auto">
-              {TABS.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2.5 text-sm font-medium border-b-2 transition whitespace-nowrap ${
-                    activeTab === tab
-                      ? "border-indigo-600 text-indigo-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+            <TabBar tabs={TABS_CONFIG} activeTab={activeTab} onChange={setActiveTab} />
 
-            {activeTab === "Chat" && (
-              <ChatTab documentId={documentId} messages={chatMessages} setMessages={setChatMessages} />
-            )}
-            {activeTab === "Summary" && (
-              <SummaryTab documentId={documentId} documentName={documentName} cache={cache} />
-            )}
-            {activeTab === "Entities" && <EntitiesTab documentId={documentId} cache={cache} />}
-            {activeTab === "Classification" && (
-              <ClassificationTab documentId={documentId} cache={cache} />
-            )}
-            {activeTab === "Risk Flags" && <RiskFlagsTab documentId={documentId} cache={cache} />}
-            {activeTab === "Analytics" && (
-              <AnalyticsPanel
-                fetchAnalytics={() =>
-                  getCachedTabData(cache, documentId, "analytics", () =>
-                    callMlService("/analytics", { document_id: documentId }).then(
-                      (data) => data.analytics
-                    )
-                  )
-                }
-              />
-            )}
+            <div key={activeTab} className="animate-fadeIn">
+              {activeTab === "Chat" && (
+                <ChatTab
+                  documentId={documentId}
+                  messages={chatMessages}
+                  setMessages={setChatMessages}
+                />
+              )}
+              {activeTab === "Summary" && (
+                <SummaryTab key={documentId} documentId={documentId} documentName={documentName} cache={cache} />
+              )}
+              {activeTab === "Entities" && (
+                <EntitiesTab key={documentId} documentId={documentId} cache={cache} />
+              )}
+              {activeTab === "Classification" && (
+                <ClassificationTab key={documentId} documentId={documentId} cache={cache} />
+              )}
+              {activeTab === "Risk Flags" && (
+                <RiskFlagsTab key={documentId} documentId={documentId} cache={cache} />
+              )}
+              {activeTab === "Analytics" && (
+                <AnalyticsTab key={documentId} documentId={documentId} cache={cache} />
+              )}
+            </div>
           </div>
         </div>
       </div>

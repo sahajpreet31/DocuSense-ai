@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { AnalyticsSkeleton } from "./Skeleton";
 
 const READABILITY_STYLES = {
   Easy: "bg-emerald-100 text-emerald-700",
@@ -42,7 +43,7 @@ export default function AnalyticsPanel({ fetchAnalytics }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (loading) return <p className="text-sm text-gray-500">Analyzing document...</p>;
+  if (loading) return <AnalyticsSkeleton />;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
   if (!data) return null;
 

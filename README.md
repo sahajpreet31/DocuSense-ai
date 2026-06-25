@@ -9,14 +9,14 @@
 
 ## ✨ Features
 
-- 💬 **AI Document Chat** — Natural language Q&A over your PDF using RAG pipeline
-- 📝 **Auto Summarization** — Instant bullet-point summaries
-- 🏷️ **Entity Extraction** — Names, dates, organizations, amounts
-- 📊 **Document Classification** — 11 categories (Contract, Resume, JD, Research Paper, Study Material, and more)
-- ⚠️ **Risk Flagging** — Detects unusual clauses and red flags with severity levels
-- 📈 **Text Analytics** — Readability score, word count, keyword frequency chart
-- 📥 **Export as PDF** — Download your document summary
-- 🔐 **Secure Auth** — JWT + bcrypt with full user account management
+-  **AI Document Chat** — Natural language Q&A over your PDF using RAG pipeline
+-  **Auto Summarization** — Instant bullet-point summaries
+-  **Entity Extraction** — Names, dates, organizations, amounts
+-  **Document Classification** — 11 categories (Contract, Resume, JD, Research Paper, Study Material, and more)
+-  **Risk Flagging** — Detects unusual clauses and red flags with severity levels
+-  **Text Analytics** — Readability score, word count, keyword frequency chart
+-  **Export as PDF** — Download your document summary
+-  **Secure Auth** — JWT + bcrypt with full user account management
 
 ---
 
@@ -49,5 +49,3 @@ Python/Flask ML Service (Hugging Face Spaces)
 **[https://docusenseai-beta.vercel.app](https://docusenseai-beta.vercel.app)**
 
 ---
-
-Made with ❤️ by [Sahajpreet Kaur](https://github.com/sahajpreet31)

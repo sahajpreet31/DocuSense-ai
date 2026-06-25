@@ -26,7 +26,17 @@
       "PowerShell(try { \\(Invoke-WebRequest -Uri http://localhost:5173 -UseBasicParsing -TimeoutSec 2\\).StatusCode } catch { \"DOWN\" })",
       "PowerShell(Get-NetTCPConnection -LocalPort 4173 -ErrorAction SilentlyContinue)",
       "PowerShell(Stop-Process -Id 10372,17796,18372,9236 -Force -ErrorAction SilentlyContinue)",
-      "PowerShell(Stop-Process -Id 20476 -Force -ErrorAction SilentlyContinue)"
+      "PowerShell(Stop-Process -Id 20476 -Force -ErrorAction SilentlyContinue)",
+      "Bash(node -c src/controllers/documentController.js)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(node -c src/controllers/authController.js)",
+      "Bash(node -c src/routes/auth.js)",
+      "Bash(node -c src/routes/documents.js)",
+      "Bash(npm run *)",
+      "Bash(pkill -f \"vite --port 5180\")",
+      "Bash(cp \"c:/Users/HP/OneDrive/Desktop/DocuSense-ai/ml-service/services/rag_service.py\" \"c:/Users/HP/OneDrive/Desktop/DocuSense-ai/ml-service/hf-space/services/rag_service.py\")",
+      "Bash(python -m py_compile services/rag_service.py)"
     ]
   }
 }

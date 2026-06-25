@@ -15,10 +15,15 @@ export default {
           "0%, 100%": { backgroundPosition: "0% 50%" },
           "50%": { backgroundPosition: "100% 50%" },
         },
+        navIn: {
+          "0%": { opacity: "0", transform: "translateY(-20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         fadeIn: "fadeIn 0.25s ease-out",
         gradientShift: "gradientShift 12s ease-in-out infinite",
+        navIn: "navIn 0.4s ease-out",
       },
     },
   },

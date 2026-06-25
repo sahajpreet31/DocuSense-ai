@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import UserMenu from "../components/UserMenu";
+import useScrollReveal from "../hooks/useScrollReveal";
 
 function UploadIcon() {
   return (
@@ -240,6 +241,25 @@ const FEATURES = [
   },
 ];
 
+function ScrollReveal({ index = 0, className = "", children }) {
+  const [ref, isVisible] = useScrollReveal();
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0px)" : "translateY(30px)",
+        transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
+        transitionDelay: `${index * 100}ms`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 const STEPS = [
   {
     number: "01",
@@ -260,31 +280,47 @@ const STEPS = [
 
 export default function LandingPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(localStorage.getItem("token")));
+  const [scrolled, setScrolled] = useState(false);
 
   const ctaTarget = isLoggedIn ? "/dashboard" : "/signup";
 
+  useEffect(() => {
+    function handleScroll() {
+      setScrolled(window.scrollY > 50);
+    }
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const navLinkClass =
+    "relative pb-1 hover:text-indigo-600 transition-colors after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-0 after:bg-indigo-600 after:transition-all after:duration-300 hover:after:w-full";
+
   return (
     <div className="min-h-screen bg-surface text-gray-900">
-      <nav className="sticky top-4 z-20 px-4">
-        <div className="max-w-5xl mx-auto bg-white/95 backdrop-blur shadow-sm border border-gray-100 rounded-full px-6 py-3 flex items-center justify-between">
+      <nav className="sticky top-4 z-20 px-4 animate-navIn">
+        <div
+          className={`max-w-5xl mx-auto border border-gray-100 rounded-full px-6 py-3 flex items-center justify-between transition-all duration-300 ${
+            scrolled ? "bg-white shadow-md backdrop-blur-md" : "bg-white/95 shadow-sm backdrop-blur"
+          }`}
+        >
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold transition-shadow duration-300 hover:shadow-[0_0_16px_4px_rgba(99,102,241,0.5)]">
               D
             </div>
             <span className="text-lg font-bold">DocuSense AI</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
-            <a href="#home" className="hover:text-indigo-600 transition">
+            <a href="#home" className={navLinkClass}>
               Home
             </a>
-            <a href="#features" className="hover:text-indigo-600 transition">
+            <a href="#features" className={navLinkClass}>
               Features
             </a>
-            <a href="#how-it-works" className="hover:text-indigo-600 transition">
+            <a href="#how-it-works" className={navLinkClass}>
               How It Works
             </a>
-            <a href="#privacy" className="hover:text-indigo-600 transition">
+            <a href="#privacy" className={navLinkClass}>
               Data Privacy
             </a>
           </div>
@@ -302,7 +338,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   to="/signup"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-full px-5 py-2 transition"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-full px-5 py-2 transition hover:scale-105"
                 >
                   Get Started
                 </Link>
@@ -348,18 +384,19 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map(({ icon: Icon, title, description }) => (
-            <Link
-              key={title}
-              to={ctaTarget}
-              className="block bg-white rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 p-6 transition cursor-pointer hover:-translate-y-1"
-            >
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
-                <Icon />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">{title}</h3>
-              <p className="text-sm text-gray-500">{description}</p>
-            </Link>
+          {FEATURES.map(({ icon: Icon, title, description }, index) => (
+            <ScrollReveal key={title} index={index} className="h-full">
+              <Link
+                to={ctaTarget}
+                className="block h-full bg-white rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 p-6 transition cursor-pointer hover:-translate-y-1"
+              >
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
+                  <Icon />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{title}</h3>
+                <p className="text-sm text-gray-500">{description}</p>
+              </Link>
+            </ScrollReveal>
           ))}
         </div>
       </section>
@@ -391,14 +428,16 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {PRIVACY_POINTS.map(({ icon: Icon, title, description }) => (
-            <div key={title} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
-                <Icon />
+          {PRIVACY_POINTS.map(({ icon: Icon, title, description }, index) => (
+            <ScrollReveal key={title} index={index} className="h-full">
+              <div className="h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
+                  <Icon />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{title}</h3>
+                <p className="text-sm text-gray-500">{description}</p>
               </div>
-              <h3 className="font-semibold text-lg mb-2">{title}</h3>
-              <p className="text-sm text-gray-500">{description}</p>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
       </section>
